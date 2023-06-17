@@ -9,5 +9,4 @@ public interface CustomerRepository extends ListCrudRepository<CustomerEntity, S
 
     @Query(value = "SELECT c FROM CustomerEntity c WHERE c.phoneNumber = :phone")
     CustomerEntity findByPhone(@Param("phone") String phone);
-
 }

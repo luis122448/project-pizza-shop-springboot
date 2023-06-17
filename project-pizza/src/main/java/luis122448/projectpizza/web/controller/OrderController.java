@@ -2,11 +2,9 @@ package luis122448.projectpizza.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import luis122448.projectpizza.service.OrderService;
+import luis122448.projectpizza.service.dto.RandomOrderDto;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -63,6 +61,16 @@ public class OrderController {
     public ResponseEntity<?> getOrderSummary(@PathVariable("orderId") int orderId){
         try {
             return ResponseEntity.ok(this.orderService.getOrderSummary(orderId));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/randomOrder")
+    public ResponseEntity<?> getRandomOder(@RequestBody RandomOrderDto t){
+        try {
+            return ResponseEntity.ok(this.orderService.saveRandomOrder(t));
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.internalServerError().build();

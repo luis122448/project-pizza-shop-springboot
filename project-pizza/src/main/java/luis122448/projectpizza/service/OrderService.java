@@ -4,7 +4,9 @@ import jakarta.persistence.criteria.Order;
 import luis122448.projectpizza.persistence.entity.OrderEntity;
 import luis122448.projectpizza.persistence.projection.OrderSummary;
 import luis122448.projectpizza.persistence.repository.OrderRepository;
+import luis122448.projectpizza.service.dto.RandomOrderDto;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -47,4 +49,8 @@ public class OrderService {
         return this.orderRepository.findSummary(orderId);
     }
 
+    @Transactional
+    public boolean saveRandomOrder(RandomOrderDto t){
+        return this.orderRepository.saveRandomOrder(t.getIdCustomer(),t.getMethod());
+    }
 }

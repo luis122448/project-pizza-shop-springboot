@@ -1,14 +1,14 @@
 
 -- TRUNCATE TABLES
 SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE `pizzeria`.`tbl_order_item`;
-TRUNCATE `pizzeria`.`tbl_pizza_order`;
-TRUNCATE `pizzeria`.`tbl_customer`;
-TRUNCATE `pizzeria`.`tbl_pizza`;
+TRUNCATE `pizza-shop`.`tbl_order_item`;
+TRUNCATE `pizza-shop`.`tbl_pizza_order`;
+TRUNCATE `pizza-shop`.`tbl_customer`;
+TRUNCATE `pizza-shop`.`tbl_pizza`;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- INSERT tbl_customerS
-INSERT INTO `pizzeria`.`tbl_customer` (`id_customer`, `name`, `address`, `email`, `phone_number`)
+INSERT INTO `pizza-shop`.`tbl_customer` (`id_customer`, `name`, `address`, `email`, `phone_number`)
 VALUES
 ("863264988","Drake Theory","P.O. Box 136, 4534 Lacinia St.","draketheory@hotmail.com","(826) 607-2278"),
 ("617684636","Alexa Morgan","Ap #732-8087 Dui. Road","aleximorgan@hotmail.com","(830) 212-2247"),
@@ -27,7 +27,7 @@ VALUES
 ("303265780","Shelton Owens","Ap #206-5413 Vivamus St.","figthowens@platzi.com","(821) 880-6661");
 
 -- INSERT PIZZAS
-INSERT INTO `pizzeria`.`tbl_pizza` (`id_pizza`, `name`, `description`, `price`, `vegetarian`, `vegan`, `available`)
+INSERT INTO `pizza-shop`.`tbl_pizza` (`id_pizza`, `name`, `description`, `price`, `vegetarian`, `vegan`, `available`)
 VALUES
 (1,"Pepperoni", "Pepperoni, Homemade Tomato Sauce & Mozzarella.", 23.0, 0, 0, 1),
 (2,"Margherita", "Fior de Latte, Homemade Tomato Sauce, Extra Virgin Olive Oil & Basil.", 18.5, 1, 0, 1),
@@ -43,7 +43,7 @@ VALUES
 (12,"Spinach Artichoke", "Fresh Spinach, Marinated Artichoke Hearts, Garlic, Fior de Latte, Mozzarella & Parmesan.", 18.95, 1, 0, 1);
 
 -- INSERT ORDERS
-INSERT INTO `pizzeria`.`tbl_pizza_order` (`id_order`, `id_customer`, `date`, `total`, `method`, `additional_notes`)
+INSERT INTO `pizza-shop`.`tbl_pizza_order` (`id_order`, `id_customer`, `date`, `total`, `method`, `additional_notes`)
 VALUES
 (1, "192758012", DATE_SUB(NOW(), INTERVAL 5 DAY), 42.95, "D", "Don't be late pls."),
 (2, "474771564", DATE_SUB(NOW(), INTERVAL 4 DAY), 62.0, "S", null),
@@ -53,7 +53,7 @@ VALUES
 (6, "782668115", NOW(), 23, "D", null);
 
 -- INSERT ORDER ITEMS
-INSERT INTO `pizzeria`.`tbl_order_item` (`id_order`, `id_item`, `id_pizza`, `quantity`, `price`)
+INSERT INTO `pizza-shop`.`tbl_order_item` (`id_order`, `id_item`, `id_pizza`, `quantity`, `price`)
 VALUES
 (1, 1, 1, 1, 23.0),
 (1, 2, 4, 1, 19.95),
@@ -65,3 +65,48 @@ VALUES
 (5, 1, 10, 0.5, 11.0),
 (5, 2, 12, 0.5, 9.5),
 (6, 1, 11, 1, 23);
+
+DROP procedure IF EXISTS `prc_take_random_pizza_order`;
+DELIMITER $$
+CREATE PROCEDURE `prc_take_random_pizza_order`(	IN id_customer VARCHAR(15),
+											IN method CHAR(1),
+											OUT order_taken BOOL)
+BEGIN
+	DECLARE id_random_pizza INT;
+    DECLARE price_random_pizza DECIMAL(5,2);
+    DECLARE price_with_discount DECIMAL(5,2);
+    
+    DECLARE WITH_ERRORS BOOL DEFAULT FALSE;
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
+    BEGIN
+		SET WITH_ERRORS = TRUE;
+    END;
+    
+	SELECT	id_pizza, price
+    INTO 	id_random_pizza, price_random_pizza
+    FROM 	tbl_pizza
+    WHERE 	available = 1
+    ORDER BY RAND()
+    LIMIT 	1;
+    
+    SET price_with_discount = price_random_pizza - (price_random_pizza * 0.20);
+    
+    START TRANSACTION;
+	INSERT INTO tbl_pizza_order (id_customer, date, total, method, additional_notes)
+	VALUES (id_customer, SYSDATE(), price_with_discount, method, '20% OFF PIZZA RANDOM PROMOTION');
+    
+    INSERT INTO tbl_order_item (id_item, id_order, id_pizza, quantity, price)
+	VALUES (1, LAST_INSERT_ID(), id_random_pizza, 1, price_random_pizza);
+	
+	IF WITH_ERRORS THEN 
+		SET order_taken = FALSE;
+		ROLLBACK;
+	ELSE 
+		SET order_taken = TRUE;
+        COMMIT;
+	END IF;
+	
+    SELECT order_taken;
+END$$
+
+DELIMITER ;
